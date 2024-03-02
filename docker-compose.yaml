@@ -1,19 +1,13 @@
 version: '3.8'
 services:
   api:
+    image: financialreportingqnaapi:${TAG}
     build: 
       context: src/api
       dockerfile: Dockerfile
     container_name: api
-    env_file:
-      - src/api/.env
   chat:
+    image: financialreportingqnachat:${TAG}
     build: 
       context: src/chat
       dockerfile: Dockerfile
-    container_name: chat
-    env_file:
-      - src/chat/.env
-    depends_on:
-      - api
-    ports: [8501]
