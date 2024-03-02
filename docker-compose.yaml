@@ -2,13 +2,13 @@ version: '3.8'
 services:
   api:
     container_name: financialreportingqnaapi
-    image: financialreportingqnaapi:${TAG}
+    image: ${REGISTRY}/financialreportingqnaapi:${TAG}
     build: 
       context: src/api
       dockerfile: Dockerfile
   chat:
     container_name: financialreportingqnachat
-    image: financialreportingqnachat:${TAG}
+    image: ${REGISTRY}/financialreportingqnachat:${TAG}
     build: 
       context: src/chat
       dockerfile: Dockerfile
