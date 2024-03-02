@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  api:
+    build: 
+      context: src/api
+      dockerfile: build.Dockerfile
+    container_name: api
+    env_file:
+      - src/api/.env
+  chat:
+    build: 
+      context: src/chat
+      dockerfile: build.Dockerfile
+    container_name: chat
+    env_file:
+      - src/chat/.env
+    depends_on:
+      - api
+    ports: [8501]
