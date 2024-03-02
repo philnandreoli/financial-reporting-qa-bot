@@ -27,3 +27,6 @@ jobs:
     - name: 'Push the Financial Reporting Q&A API Docker Container'
       run: |
         docker push ${{ vars.REGISTRY_LOGIN_SERVER }}/financialreportingqnaapi:${{ github.sha }}
+    - name: 'Push the Financial Reporting Q&A Chat Interface Docker Container'
+      run: |
+        docker push ${{ vars.REGISTRY_LOGIN_SERVER }}/financialreportingqnachat:${{ github.sha }}
