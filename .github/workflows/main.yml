@@ -23,7 +23,7 @@ jobs:
 
     - name: 'Build the Financial Reporting Q&A API Docker Container'
       run: |
-        docker build -f src/api/ . -t ${{ vars.REGISTRY_LOGIN_SERVER }}/financialreportingqnaapi:${{ github.sha }}
+        docker build -f src/api/Dockerfile . -t ${{ vars.REGISTRY_LOGIN_SERVER }}/financialreportingqnaapi:${{ github.sha }}
 
     - name: 'Push the Financial Reporting Q&A API Docker Container'
       run: |
