@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "__app_name__"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [
+    { include = "app" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+uvicorn = "^0.23.2"
+langserve = {extras = ["all"], version = "^0.0.46"}
+pydantic = "<2"
+langchain-openai = "^0.0.8"
+azure-identity = "^1.15.0"
+azure-search-documents = "^11.4.0"
+
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
