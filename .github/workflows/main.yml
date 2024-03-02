@@ -1,0 +1,30 @@
+name: 'Financial Reporting Q&A Chat Bot Build'
+on: [push]
+
+jobs:
+  build-images-and-push-container-registry:
+    environment: DEVELOPMENT
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Checkout Github Action'
+      uses: actions/checkout@main
+
+    - name: 'Login via Azure CLI'
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: 'Login to Container Registry'
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ vars.REGISTRY_LOGIN_SERVER }}
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    - name: 'Build the Financial Reporting Q&A API Docker Container'
+      run: |
+        docker build -f src/api/build.Dockerfile -t ${{ vars.REGISTRY_LOGIN_SERVER }}/financialreportingqnaapi:${{ github.sha }}
+
+    - name: 'Push the Financial Reporting Q&A API Docker Container'
+      run: |
+        docker push ${{ vars.REGISTRY_LOGIN_SERVER }}/financialreportingqnaapi:${{ github.sha }}
