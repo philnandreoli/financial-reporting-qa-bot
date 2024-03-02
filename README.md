@@ -9,23 +9,23 @@ To install and run the chat bot, follow these steps:
 1. Clone the repository.
 2. Add .env files to the src/api and the src/chat directores.  
     1. The env file in the src/api folder should have the following entries:
-        AZURE_OPENAI_API_VERSION=
-        AZURE_OPENAI_ENDPOINT=
-        AZURE_OPENAI_API_KEY=
-        AZURE_OPENAI_DEPLOYMENT_NAME=
-        AZURE_AI_SEARCH_ENDPOINT=
-        AZURE_AI_SEARCH_KEY=
-        AZURE_AI_SEARCH_INDEX_NAME=
-        AZURE_AI_EMBEDDING_DEPLOYMENT_NAME=
-        AZURE_OPENAI_MODEL_VERSION=
-        LANGCHAIN_TRACING_V2=
-        LANGCHAIN_ENDPOINT=
-        LANGCHAIN_API_KEY=
-        LANGCHAIN_PROJECT=
-        DEBUG=
-        ENABLE_LANGCHAIN_PLAYGROUND=
+        AZURE_OPENAI_API_VERSION=  
+        AZURE_OPENAI_ENDPOINT=  
+        AZURE_OPENAI_API_KEY=  
+        AZURE_OPENAI_DEPLOYMENT_NAME=  
+        AZURE_AI_SEARCH_ENDPOINT=  
+        AZURE_AI_SEARCH_KEY=  
+        AZURE_AI_SEARCH_INDEX_NAME=  
+        AZURE_AI_EMBEDDING_DEPLOYMENT_NAME=  
+        AZURE_OPENAI_MODEL_VERSION=  
+        LANGCHAIN_TRACING_V2=  
+        LANGCHAIN_ENDPOINT=  
+        LANGCHAIN_API_KEY=  
+        LANGCHAIN_PROJECT=  
+        DEBUG=  
+        ENABLE_LANGCHAIN_PLAYGROUND=  
     2.  The env file in the src/chat folder should have teh following entries:
-        QNA_API_ENDPOINT
+        QNA_API_ENDPOINT=  
 3. Configure the chat bot with the necessary credentials.
 4. To run locally, use docker compose file in the root directory to spin up the necessary containers.  
 
