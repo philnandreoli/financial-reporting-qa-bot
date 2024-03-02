@@ -26,4 +26,4 @@ jobs:
         TAG=${{ github.sha }} docker-compose build
     - name: 'Push the Financial Reporting Q&A API Docker Container'
       run: |
-        docker-compose push financialreportingqnaapi:${{ github.sha }}
+        TAG=${{ github.sha }} docker-compose push financialreportingqnaapi:${{ github.sha }}
