@@ -23,7 +23,7 @@ jobs:
 
     - name: 'Build the Financial Reporting Q&A API Docker Container'
       run: |
-        TAG=${{ github.sha }} docker-compose build
+        TAG=${{ github.sha }} REGISTRY=${{ vars.REGISTRY_LOGIN_SERVER }} docker-compose build
     - name: 'Push the Financial Reporting Q&A API Docker Container'
       run: |
-        TAG=${{ github.sha }} docker-compose push ${{ vars.REGISTRY_LOGIN_SERVER }}/financialreportingqnaapi:${{ github.sha }}
+        docker push ${{ vars.REGISTRY_LOGIN_SERVER }}/financialreportingqnaapi:${{ github.sha }}
