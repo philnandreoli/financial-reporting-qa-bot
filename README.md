@@ -24,7 +24,7 @@ To install and run the chat bot, follow these steps:
         LANGCHAIN_PROJECT=  
         DEBUG=  
         ENABLE_LANGCHAIN_PLAYGROUND=  
-    2.  The env file in the src/chat folder should have teh following entries:
+    2.  The env file in the src/chat folder should have teh following entries:  
         QNA_API_ENDPOINT=  
 3. Configure the chat bot with the necessary credentials.
 4. To run locally, use docker compose file in the root directory to spin up the necessary containers.  
