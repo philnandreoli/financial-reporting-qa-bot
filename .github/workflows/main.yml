@@ -1,6 +1,9 @@
 name: 'Financial Reporting Q&A Chat Bot Build'
-on: [push]
-
+on: 
+  push:
+    branches:
+      - 'main'
+      
 jobs:
   build-images-and-push-container-registry:
     environment: DEVELOPMENT
