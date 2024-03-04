@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 streamlit = "1.31.1"
+python-decouple = "^3.8"
 
 
 [build-system]

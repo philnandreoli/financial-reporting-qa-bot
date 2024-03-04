@@ -1,8 +1,8 @@
 import streamlit as st
-from os import getenv
 import requests 
+from decouple import config
 
-QNA_API_ENDPOINT = getenv("QNA_API_ENDPOINT")
+QNA_API_ENDPOINT = config("QNA_API_ENDPOINT")
 
 with st.sidebar:
     "[Coming Soon](https://github.com/philnandreoli/financial-reporting-qa-bot)"
