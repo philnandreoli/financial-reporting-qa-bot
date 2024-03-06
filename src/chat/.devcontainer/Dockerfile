@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/python:1-3.11-buster
+FROM mcr.microsoft.com/devcontainers/python:3.11-buster
 
 ENV PYTHONUNBUFFERED 1
 

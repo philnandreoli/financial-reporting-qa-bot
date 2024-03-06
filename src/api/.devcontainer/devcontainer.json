@@ -22,7 +22,8 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pip3 install --user -r .devcontainer/requirements.txt"
+	"postCreateCommand": "pip3 install --user -r .devcontainer/requirements.txt",
+	"postStartCommand": "poetry config virtualenvs.in-project true && poetry install"
 
 	// Configure tool-specific properties.
 	// "customizations": {},
