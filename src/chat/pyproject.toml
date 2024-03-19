@@ -9,6 +9,9 @@ readme = "README.md"
 python = "^3.11"
 streamlit = "1.31.1"
 python-decouple = "^3.8"
+msal = "1.27.0"
+msal-streamlit-authentication = "^1.0.9"
+langserve = {extras = ["all"], version = "^0.0.46"}
 
 
 [build-system]

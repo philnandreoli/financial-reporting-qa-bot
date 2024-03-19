@@ -22,12 +22,12 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pip3 install --user -r .devcontainer/requirements.txt",
-	"postStartCommand": "poetry config virtualenvs.in-project true && poetry install"
+	"postCreateCommand": "sudo apt-get update && sudo apt-get install wkhtmltopdf -y && pip3 install --user -r .devcontainer/requirements.txt",
+	"postStartCommand": "poetry config virtualenvs.in-project true && poetry install",
 
 	// Configure tool-specific properties.
 	// "customizations": {},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+	"remoteUser": "root"
 }
