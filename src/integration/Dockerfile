@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-RUN sudo apt-get update && sudo apt-get install wkhtmltopdf -y
+RUN apt-get update && apt-get install wkhtmltopdf -y
 
 RUN pip install poetry==1.8.1
 
