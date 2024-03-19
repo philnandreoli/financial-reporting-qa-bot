@@ -12,3 +12,9 @@ services:
     build: 
       context: src/chat
       dockerfile: Dockerfile
+  integration:
+    container_name: financialreportingqnaintegration
+    image: ${REGISTRY}/financialreportingqnaintegration:${TAG}
+    build:
+      context: src/integration
+      dockerfile: Dockerfile
