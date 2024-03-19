@@ -1,22 +1,23 @@
-from os import getenv, path, mkdir
-from datetime import datetime
-from fastapi import FastAPI, HTTPException 
 import pytz
 import html
 import requests
 import re
 import base64
-from typing import List, Dict
-from requests.exceptions import RequestException
+import uuid
 import pandas as pd
 import pdfkit
+from os import getenv, path, mkdir
+from datetime import datetime
+from flask import Flask, request
+from flask_restful import Api, Resource
+from typing import List, Dict
+from requests.exceptions import RequestException
 from azure.storage.blob import BlobServiceClient
 from azure.ai.documentintelligence import DocumentIntelligenceClient
-from azure.ai.documentintelligence.models import AnalyzeDocumentRequest, ContentFormat, DocumentTable
+from azure.ai.documentintelligence.models import DocumentTable
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents import SearchClient
-from langchain_community.vectorstores.azuresearch import AzureSearch
 from langchain_openai import AzureOpenAIEmbeddings
 from azure.search.documents.indexes.models import (
     HnswAlgorithmConfiguration,
@@ -33,22 +34,137 @@ from azure.search.documents.indexes.models import (
     VectorSearchAlgorithmMetric,
     SearchField
 )
-
 from prepdocslib.pdfparser import DocumentAnalysisParser 
 from prepdocslib.page import Page
 from glob import glob
+from pymongo import MongoClient
+import threading
 
+app = Flask(__name__)
+api = Api(app)
 
+MONGO_URI = getenv("AZURE_COSMOSDB_CONNECTIONSTRING")
+MONGO_DB = getenv("AZURE_COSMOSDB_DATABASE_NAME")
+MONGO_COLLECTION = getenv("AZURE_COSMOSDB_COLLECTION_NAME")
 HEADERS = { "User-Agent": f"{getenv('COMPANY_NAME')} {getenv('COMPANY_EMAIL')}"}
 
-"""
-Here are the steps to download a financial report from the SEC website and the store it in Azure AI Search:
+# Create the Azure Open AI Embeddings Endpoint 
+embeddings = AzureOpenAIEmbeddings(
+    azure_endpoint=getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=getenv("AZURE_OPENAI_API_KEY"),
+    api_version=getenv("AZURE_OPENAI_API_VERSION"),
+    azure_deployment=getenv("AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT")
+)
 
-1.  Download the SEC Reports
-2.  Check to make sure the index has been created and has the necessary fields
-3.  Make a call to Azure Document Intelligence for the document
-4.  Process the document
-"""
+# Create the Blob Services Client Endpoint
+blob_service_client = BlobServiceClient(
+    account_url=f"https://{getenv('AZURE_STORAGE_ACCOUNT_NAME')}.blob.core.windows.net/",
+    credential=getenv("AZURE_STORAGE_ACCOUNT_KEY")
+)
+
+# Create the Azure Search Client
+azure_search_client = SearchClient(
+    endpoint=getenv("AZURE_AI_SEARCH_ENDPOINT"),
+    credential=AzureKeyCredential(getenv("AZURE_AI_SEARCH_KEY")),
+    index_name=getenv("AZURE_AI_SEARCH_INDEX_NAME")
+)
+
+timezone = pytz.timezone(getenv("TIMEZONE"))
+mongo_client = MongoClient(MONGO_URI)
+# Create the database if it does not exist
+db = mongo_client[MONGO_DB]
+# Create the collection if it does not exist 
+collection = db[MONGO_COLLECTION]
+
+class Job(Resource):
+    def post(self):
+        data = request.get_json(force=True)
+        stock_symbol = data.get("stockSymbol")
+        report_date = data.get("reportDate", {})
+        start_date = report_date.get("startDate")
+        end_date = report_date.get("endDate")
+        job_id = str(uuid.uuid4())
+        collection.insert_one({
+            "_id": job_id,
+            "status": "Started",
+            "stockSymbol": stock_symbol,
+            "startDate": start_date,
+            "endDate": end_date,
+            "fileStatus": [] 
+        })
+        threading.Thread(target=file_processing_task, args=(job_id, stock_symbol, start_date, end_date)).start()
+        return {"job_id": job_id, "status": "Started"}, 202
+
+class JobStatus(Resource):
+    def get(self, job_id: str):
+        job_item = collection.find_one({"_id": job_id})
+        if job_item:
+            status = job_item["status"]
+        else:
+            status = "Not Found"
+        return {"job_id": job_id, "status": status}
+
+def file_processing_task(job_id: str, stock_symbol: str, start_date: str = None, end_date: str = None):
+    
+    job_status = collection.find_one({"_id": job_id})
+    job_status["file_status"] = [{}]
+    
+    # Create the download directory where the financial reports will be stored
+    create_download_directory(stock_symbol=stock_symbol)
+
+    # create the ai search index that will be used to store the content and vectors
+    search_index_created = create_ai_search_index(
+        ai_search_endpoint=getenv("AZURE_AI_SEARCH_ENDPOINT"),
+        credential=AzureKeyCredential(getenv("AZURE_AI_SEARCH_KEY")),
+        index_name=getenv("AZURE_AI_SEARCH_INDEX_NAME")
+    )
+
+    if search_index_created:
+
+        # Get the central index key for the specific stock symbol
+        cik_number = get_central_index_key(stock_symbol=stock_symbol)
+
+        # Download the financial reports for the specific stock symbol and timeframe
+        documents = download_financial_report(
+            cik_number=cik_number["cik_str"], 
+            stock_symbol=cik_number["ticker"],
+            storage_account_name=getenv("AZURE_STORAGE_ACCOUNT_NAME"),
+            container_name=getenv("AZURE_STORAGE_CONTAINER_NAME"),
+            blob_service_client=blob_service_client,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        for document in documents:
+            pages = parse_documents(openai_embedding=embeddings, filePath=document['localPath'])
+            AI_SEARCH_DOCUMENTS=[]
+            for page in pages:
+                ai_search_page = {
+                    "id": f"{document['id']}-page-{page['page_num']}",
+                    "content": page["page_text"],
+                    "page": f"{document['fileName']}-{page['page_num']}",
+                    "url": document["blobFullPath"],
+                    "filename": document["blobContainerPath"],
+                    "content_vector": page["page_embedding"],
+                    "stock_symbol": stock_symbol,
+                    "form_type": document["form"],
+                    "year": int(document["reportDate"].split("-")[0]),
+                    "report_date": document["reportDate"],
+                    "filing_date": document["filingDate"],
+                    "cy_quarter": f"Q{int(document['reportDate'].split('-')[1])/4 + 1}",
+                    "latest": document["latest"],
+                    "company_name": cik_number["title"],
+                    "report_date_utc": timezone.localize(datetime.strptime(document["reportDate"], "%Y-%m-%d")).astimezone(pytz.utc),
+                    "filing_date_utc": timezone.localize(datetime.strptime(document["filingDate"], "%Y-%m-%d")).astimezone(pytz.utc)
+                }
+                AI_SEARCH_DOCUMENTS.append(ai_search_page)
+            
+            collection.update_one({"_id": job_id}, {"$push": { "fileStatus": { "fileName": document["blobContainerPath"], "form": document["form"], "filingDate": document["filingDate"], "reportDate":  document["reportDate"], "status": "Completed" }}})
+            
+            azure_search_client.merge_or_upload_documents(AI_SEARCH_DOCUMENTS)
+        collection.update_one({"_id": job_id}, {"$set": {"status": "Completed"}})
+    
+
 
 
 
@@ -403,77 +519,12 @@ def filename_to_id(filename: str):
     filename_hash = base64.b16encode(filename.encode("utf-8")).decode("ascii")
     return f"file-{filename_ascii}-{filename_hash}"
 
-def create_directory(stock_symbol: str):
+def create_download_directory(stock_symbol: str):
     if not path.exists(f"{getenv('DOWNLOAD_ROOT_PATH')}/{stock_symbol}"):
         mkdir(f"{getenv('DOWNLOAD_ROOT_PATH')}/{stock_symbol}")
 
-start_date = "2023-01-01"
-end_date = "2024-03-15"
+api.add_resource(Job, "/api/job")
+api.add_resource(JobStatus, "/api/job/<job_id>")
 
-timezone = pytz.timezone("America/Chicago")
-
-stock_symbol = "NKE"
-
-embeddings = AzureOpenAIEmbeddings(
-    azure_endpoint=getenv("AZURE_OPENAI_ENDPOINT"),
-    api_key=getenv("AZURE_OPENAI_API_KEY"),
-    api_version=getenv("AZURE_OPENAI_API_VERSION"),
-    azure_deployment=getenv("AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT")
-)
-
-blob_service_client = BlobServiceClient(
-    account_url=f"https://{getenv('AZURE_STORAGE_ACCOUNT_NAME')}.blob.core.windows.net/",
-    credential=getenv("AZURE_STORAGE_ACCOUNT_KEY")
-)
-
-azure_search_client = SearchClient(
-    endpoint=getenv("AZURE_AI_SEARCH_ENDPOINT"),
-    credential=AzureKeyCredential(getenv("AZURE_AI_SEARCH_KEY")),
-    index_name=getenv("AZURE_AI_SEARCH_INDEX_NAME")
-)
-
-cik_number = get_central_index_key(stock_symbol)
-create_directory(stock_symbol)
-documents = download_financial_report(
-    cik_number=cik_number["cik_str"], 
-    stock_symbol=cik_number["ticker"],
-    storage_account_name=getenv("AZURE_STORAGE_ACCOUNT_NAME"),
-    container_name=getenv("AZURE_STORAGE_CONTAINER_NAME"),
-    blob_service_client=blob_service_client,
-    start_date=start_date,
-    end_date=end_date
-)
-
-# create the ai search index that will be used to store the content and vectors
-search_index_created = create_ai_search_index(
-    ai_search_endpoint=getenv("AZURE_AI_SEARCH_ENDPOINT"),
-    credential=AzureKeyCredential(getenv("AZURE_AI_SEARCH_KEY")),
-    index_name=getenv("AZURE_AI_SEARCH_INDEX_NAME")
-)
-
-if search_index_created == True:
-    for document in documents:
-        pages = parse_documents(openai_embedding=embeddings, filePath=document['localPath'])
-        AI_SEARCH_DOCUMENTS=[]
-        for page in pages:
-            ai_search_page = {
-                "id": f"{document['id']}-page-{page['page_num']}",
-                "content": page["page_text"],
-                "page": f"{document['fileName']}-{page['page_num']}",
-                "url": document["blobFullPath"],
-                "filename": document["blobContainerPath"],
-                "content_vector": page["page_embedding"],
-                "stock_symbol": stock_symbol,
-                "form_type": document["form"],
-                "year": int(document["reportDate"].split("-")[0]),
-                "report_date": document["reportDate"],
-                "filing_date": document["filingDate"],
-                "cy_quarter": f"Q{int(document['reportDate'].split('-')[1])/4 + 1}",
-                "latest": document["latest"],
-                "company_name": cik_number["title"],
-                "report_date_utc": timezone.localize(datetime.strptime(document["reportDate"], "%Y-%m-%d")).astimezone(pytz.utc),
-                "filing_date_utc": timezone.localize(datetime.strptime(document["filingDate"], "%Y-%m-%d")).astimezone(pytz.utc)
-            }
-            AI_SEARCH_DOCUMENTS.append(ai_search_page)
-        
-        azure_search_client.merge_or_upload_documents(AI_SEARCH_DOCUMENTS)
+if __name__ == "__main__":
+    app.run(debug=True, port=9500)
