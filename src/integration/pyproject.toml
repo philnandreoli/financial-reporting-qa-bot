@@ -21,6 +21,8 @@ tiktoken = "^0.6.0"
 openai = "^1.13.3"
 pillow = "^10.2.0"
 langchain-openai = "^0.0.8"
+pytz = "^2024.1"
+fastapi = "^0.110.0"
 
 
 [build-system]
