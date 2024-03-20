@@ -527,4 +527,5 @@ api.add_resource(Job, "/api/job")
 api.add_resource(JobStatus, "/api/job/<job_id>")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=9500, host="0.0.0.0")
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=9500)
