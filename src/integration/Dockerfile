@@ -22,4 +22,4 @@ EXPOSE ${PORT:-9500}
 
 WORKDIR /app
 
-CMD [ "waitress-serve", "--port", "9500", "--call", "main:create_app" ]
+CMD [ "cd", "app", "&&", "waitress-serve", "--port", "9500", "--call", "main:create_app" ]
