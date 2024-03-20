@@ -40,9 +40,6 @@ from glob import glob
 from pymongo import MongoClient
 import threading
 
-app = Flask(__name__)
-api = Api(app)
-
 MONGO_URI = getenv("AZURE_COSMOSDB_CONNECTIONSTRING")
 MONGO_DB = getenv("AZURE_COSMOSDB_DATABASE_NAME")
 MONGO_COLLECTION = getenv("AZURE_COSMOSDB_COLLECTION_NAME")
@@ -523,9 +520,17 @@ def create_download_directory(stock_symbol: str):
     if not path.exists(f"{getenv('DOWNLOAD_ROOT_PATH')}/{stock_symbol}"):
         mkdir(f"{getenv('DOWNLOAD_ROOT_PATH')}/{stock_symbol}")
 
-api.add_resource(Job, "/api/job")
-api.add_resource(JobStatus, "/api/job/<job_id>")
 
-if __name__ == "__main__":
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=9500)
+
+#if __name__ == "__main__":
+#    from waitress import serve
+#    print("Server is running on port 9500....")
+#    serve(app, host="0.0.0.0", port=9500)
+
+def create_app():
+    app = Flask(__name__)
+    api = Api(app)
+    api.add_resource(Job, "/api/job")
+    api.add_resource(JobStatus, "/api/job/<job_id>")
+
+    return app
