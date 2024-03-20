@@ -20,6 +20,4 @@ ARG PORT
 
 EXPOSE ${PORT:-9500}
 
-WORKDIR /app
-
-CMD [ "cd", "app", "&&", "waitress-serve", "--port", "9500", "--call", "main:create_app" ]
+RUN cd app && waitress-serve --port ${PORT:-9500} --call main:create_app
