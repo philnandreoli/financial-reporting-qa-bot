@@ -20,4 +20,6 @@ ARG PORT
 
 EXPOSE ${PORT:-9500}
 
-CMD [ "python", "-m" "flask", "run", "--host=0.0.0.0" ]
+ENTRYPOINT [ "python" ]
+
+CMD [ "./app/main.py" ]
