@@ -20,6 +20,6 @@ ARG PORT
 
 EXPOSE ${PORT:-9500}
 
-ENTRYPOINT [ "python" ]
+WORKDIR /app
 
-CMD [ "./app/main.py" ]
+CMD [ "waitress-serve", "--port", "9500", "--call", "main:create_app" ]
