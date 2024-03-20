@@ -520,17 +520,12 @@ def create_download_directory(stock_symbol: str):
     if not path.exists(f"{getenv('DOWNLOAD_ROOT_PATH')}/{stock_symbol}"):
         mkdir(f"{getenv('DOWNLOAD_ROOT_PATH')}/{stock_symbol}")
 
+app = Flask(__name__)
+api = Api(app)
+api.add_resource(Job, "/api/job")
+api.add_resource(JobStatus, "/api/job/<job_id>")
 
-
-#if __name__ == "__main__":
-#    from waitress import serve
-#    print("Server is running on port 9500....")
-#    serve(app, host="0.0.0.0", port=9500)
-
-def create_app():
-    app = Flask(__name__)
-    api = Api(app)
-    api.add_resource(Job, "/api/job")
-    api.add_resource(JobStatus, "/api/job/<job_id>")
-
-    return app
+if __name__ == "__main__":
+    from waitress import serve
+    print("Server is running on port 9500....")
+    serve(app, host="0.0.0.0", port=9500)
