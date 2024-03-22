@@ -8,8 +8,6 @@ services:
       dockerfile: Dockerfile
     ports: 
       - 8000:8000
-    env_file:
-      - .env
     environment:
       - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
@@ -34,8 +32,6 @@ services:
       dockerfile: Dockerfile
     ports: 
       - 8501:8501
-    env_file:
-      - .env
     environment:
       - QNA_API_ENDPOINT=http://financialreportingqnaapi:8000/financial-report/
   integration:
@@ -46,8 +42,6 @@ services:
       dockerfile: Dockerfile
     ports: 
       - 9500:9500
-    env_file:
-      - .env
     environment:
       - COMPANY_NAME=${COMPANY_NAME}
       - COMPANY_EMAIL_ADDRESS=${COMPANY_EMAIL_ADDRESS}
