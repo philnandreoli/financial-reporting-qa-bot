@@ -90,16 +90,19 @@ class Job(Resource):
             "fileStatus": [] 
         })
         threading.Thread(target=file_processing_task, args=(job_id, stock_symbol, start_date, end_date)).start()
-        return {"job_id": job_id, "status": "Started"}, 202
+        return {"jobID": job_id, "status": "Started"}, 202
 
 class JobStatus(Resource):
     def get(self, job_id: str):
         job_item = collection.find_one({"_id": job_id})
+        response = {}
         if job_item:
             status = job_item["status"]
+            response =  {"jobID": job_id, "status": status, "stockSymbol": job_item["stockSymbol"], "startDate": job_item["startDate"], "endDate": job_item["endDate"], "fileStatus": job_item["fileStatus"]}
         else:
             status = "Not Found"
-        return {"job_id": job_id, "status": status}
+            response = {"jobID": job_id, "status": status}
+        return response 
 
 def file_processing_task(job_id: str, stock_symbol: str, start_date: str = None, end_date: str = None):
     
@@ -156,15 +159,11 @@ def file_processing_task(job_id: str, stock_symbol: str, start_date: str = None,
                 }
                 AI_SEARCH_DOCUMENTS.append(ai_search_page)
             
-            collection.update_one({"_id": job_id}, {"$push": { "fileStatus": { "fileName": document["blobContainerPath"], "form": document["form"], "filingDate": document["filingDate"], "reportDate":  document["reportDate"], "status": "Completed" }}})
+            collection.update_one({"_id": job_id}, {"$push": { "fileStatus": { "fileName": document["blobContainerPath"], "form": document["form"], "filingDate": document["filingDate"], "reportDate":  document["reportDate"], "status": "Completed", "latest": document["latest"]}}})
             
             azure_search_client.merge_or_upload_documents(AI_SEARCH_DOCUMENTS)
         collection.update_one({"_id": job_id}, {"$set": {"status": "Completed"}})
     
-
-
-
-
 # Get the list of stock symbols from the SEC Website and return the central index key for the specific stock symbol
 def get_central_index_key(stock_symbol: str) -> dict[any, any]:
     cik_lookup_json = requests.get("https://www.sec.gov/files/company_tickers.json", headers=HEADERS).json()
