@@ -80,9 +80,13 @@ parse_question_for_query_prompt = ChatPromptTemplate.from_template(
     5.  Determine what year are they are looking for and then return the year. 
     6.  You should craft the filter that will be used in the search.  
             Example 1:
-            ((stock_symbol eq 'MSFT') or (stock_symbol eq 'NVDA')) and latest eq true
+            search.in(stock_symbol, 'MSFT,NVDA', ',') and latest eq true
             Example 2:
-            ((stock_symbol eq 'MSFT') or (stock_symbol eq 'NVDA')) and latest eq false and year eq 2020 and cy_quarter eq 'Q2' and form_type eq '10-Q'
+            search.in(stock_symbol, 'MSFT,NVDA', ',') and latest eq false and year eq 2020 and cy_quarter eq 'Q2' and form_type eq '10-Q'
+            Example 3:
+            stock_symbol eq 'MSFT' and latest eq true 
+            Example 4:
+            stock_symbol eq 'MSFT' and latest eq false and cy_quarter eq 'Q2' and form_type eq '10-Q'
     7.  You should only return a JSON object and nothing else that has a property called filter and another property called question.  The filter property will have the output from step 6 and the question property will have the question that the user asked.  The json object should look like the followng:
 
     Question: {user_question}
