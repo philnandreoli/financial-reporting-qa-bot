@@ -48,6 +48,8 @@ services:
       - 9500:9500
     env_file:
       - .env
+    volumes:
+      - ./src/integration/data:/data
     environment:
       - COMPANY_NAME=${COMPANY_NAME}
       - COMPANY_EMAIL_ADDRESS=${COMPANY_EMAIL_ADDRESS}
